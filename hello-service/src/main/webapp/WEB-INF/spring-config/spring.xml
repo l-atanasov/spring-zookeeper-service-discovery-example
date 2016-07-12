@@ -39,11 +39,18 @@
 	</bean>
 	
 	<bean id="restTemplate" class="org.springframework.web.client.RestTemplate">
-		<constructor-arg>
+		<property name="requestFactory">
 			<bean class="com.pastelstudios.spring.zookeeper.discovery.http.ServiceProviderClientHttpRequestFactory">
 				<constructor-arg ref="serviceProviderRegistry" />
 			</bean>
-		</constructor-arg>
+		</property>
+		<property name="interceptors">
+			<list>
+				<bean class="com.pastelstudios.spring.zookeeper.discovery.http.ServiceProviderClientHttpRequestInterceptor">
+					<constructor-arg ref="serviceProviderRegistry" />
+				</bean>
+			</list>
+		</property>
 	</bean>
 	
 	<bean id="nameServiceClient" class="com.pastelstudios.spring.zookeeper.feign.FeignClientFactoryBean">

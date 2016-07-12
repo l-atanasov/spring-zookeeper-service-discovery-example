@@ -25,64 +25,40 @@ public class ServiceProviderClientHttpRequestFactory extends SimpleClientHttpReq
 
 	@Override
 	public ClientHttpRequest createRequest(URI uri, HttpMethod httpMethod) throws IOException {
-		uri = resolveURI(uri);
-		return super.createRequest(uri, httpMethod);
+		ResolvedDependency resolvedDependency = resolveDependency(uri);
+		ClientHttpRequest delegate = super.createRequest(resolvedDependency.getUri(), httpMethod);
+		return new ServiceInstanceClientHttpRequest(delegate, resolvedDependency.getServiceInstance());
 	}
 
 	@Override
 	public AsyncClientHttpRequest createAsyncRequest(URI uri, HttpMethod httpMethod) throws IOException {
-		uri = resolveURI(uri);
-		return super.createAsyncRequest(uri, httpMethod);
+		ResolvedDependency resolvedDependency = resolveDependency(uri);
+		AsyncClientHttpRequest delegate = super.createAsyncRequest(resolvedDependency.getUri(), httpMethod);
+		return new ServiceInstanceAsyncClientHttpRequest(delegate, resolvedDependency.getServiceInstance());
 	}
 
-	private URI resolveURI(URI uri) {
-		UriComponents uriComponents = new UriComponents(uri);
+	private ResolvedDependency resolveDependency(URI uri) {
+		DependencyUriComponents uriComponents = new DependencyUriComponents(uri);
 		String serviceName = uriComponents.getServiceName();
 		ServiceProvider<ServiceMetadata> serviceProvider = serviceProviderRegistry.getProvider(serviceName);
 		if (serviceProvider == null) {
-			throw new RuntimeException("There is no registered provider for dependency " + serviceName);
+			throw new RestClientServiceDependencyException("There is no registered provider for dependency " + serviceName);
 		}
 		ServiceInstance<ServiceMetadata> serviceInstance = null;
 		try {
 			serviceInstance = serviceProvider.getInstance();
 		} catch (Exception e) {
-			throw new RuntimeException(e);
+			throw new RestClientServiceDependencyException("Could not get an instance of " + serviceName + " from service provider", e);
 		}
 		if (serviceInstance == null) {
-			throw new RuntimeException("Cannot find an instance for dependency " + serviceName);
+			throw new RestClientServiceDependencyException("Cannot find an instance for dependency " + serviceName);
 		}
 		String resolvedUri = serviceInstance.buildUriSpec() + uriComponents.getPath();
 		try {
-			return new URI(resolvedUri);
+			return new ResolvedDependency(new URI(resolvedUri), serviceInstance);
 		} catch (URISyntaxException e) {
 			throw new RuntimeException(e);
 		}
 	}
-
-	private static class UriComponents {
-		private String serviceName;
-		private String path;
-
-		public UriComponents(URI uri) {
-			String fullUri = uri.toString();
-			int indexOfSlash = fullUri.indexOf("/");
-			if(indexOfSlash != -1) {
-				serviceName = fullUri.substring(0, indexOfSlash);
-				path = fullUri.substring(indexOfSlash);
-			} else {
-				serviceName = fullUri;
-				path = "";
-			}
-		}
-
-		public String getServiceName() {
-			return serviceName;
-		}
-
-		public String getPath() {
-			return path;
-		}
-
-	}
-
+	
 }
