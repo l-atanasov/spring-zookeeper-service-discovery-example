@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:task="http://www.springframework.org/schema/task"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans 
+						http://www.springframework.org/schema/beans/spring-beans-4.3.xsd
+					    http://www.springframework.org/schema/context 
+					    http://www.springframework.org/schema/context/spring-context-4.3.xsd
+					    http://www.springframework.org/schema/task 
+					    http://www.springframework.org/schema/task/spring-task-4.3.xsd">
+					    
+	<bean id="curatorFramework" class="com.pastelstudios.spring.zookeeper.CuratorFrameworkFactoryBean">
+		<property name="connectString" value="localhost:2181" />
+	</bean>
+	
+	<bean id="serviceDiscovery" class="com.pastelstudios.spring.zookeeper.discovery.CuratorServiceDiscoveryFactoryBean">
+		<property name="client" ref="curatorFramework" />
+		<property name="basePath" value="/services" />
+	</bean>
+	
+	<bean id="serviceInstance" class="com.pastelstudios.spring.zookeeper.discovery.CuratorServiceInstanceFactoryBean">
+		<property name="serviceDiscovery" ref="serviceDiscovery" />
+		<property name="serviceName" value="HelloService" />
+		<property name="port" value="8080" />
+	</bean>
+	
+	<bean id="nameServiceProvider" class="com.pastelstudios.spring.zookeeper.discovery.CuratorServiceProviderFactoryBean">
+		<property name="serviceDiscovery" ref="serviceDiscovery" />
+		<property name="serviceName" value="NameService" />
+	</bean>
+	
+	<bean id="serviceProviderRegistry" class="com.pastelstudios.spring.zookeeper.discovery.SimpleServiceProviderRegistry">
+		<property name="serviceProviders">
+			<list>
+				<ref bean="nameServiceProvider" />
+			</list>
+		</property>
+	</bean>
+	
+	<bean id="restTemplate" class="org.springframework.web.client.RestTemplate">
+		<constructor-arg>
+			<bean class="com.pastelstudios.spring.zookeeper.discovery.http.ServiceProviderClientHttpRequestFactory">
+				<constructor-arg ref="serviceProviderRegistry" />
+			</bean>
+		</constructor-arg>
+	</bean>
+	
+	<bean id="nameServiceClient" class="com.pastelstudios.spring.zookeeper.feign.FeignClientFactoryBean">
+		<property name="type" value="com.pastelstudios.example.helloservice.dependency.NameService" />
+		<property name="serviceProvider" ref="nameServiceProvider" />
+	</bean>
+	
+</beans>
