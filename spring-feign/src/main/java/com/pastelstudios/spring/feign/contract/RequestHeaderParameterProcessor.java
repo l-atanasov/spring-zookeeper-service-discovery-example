@@ -1,4 +1,4 @@
-package com.pastelstudios.spring.zookeeper.feign.contract;
+package com.pastelstudios.spring.feign.contract;
 
 import static feign.Util.checkState;
 import static feign.Util.emptyToNull;
@@ -6,19 +6,19 @@ import static feign.Util.emptyToNull;
 import java.lang.annotation.Annotation;
 import java.util.Collection;
 
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 import feign.MethodMetadata;
 
 /**
- * {@link RequestParam} parameter processor.
+ * {@link RequestHeader} parameter processor.
  *
  * @author Jakub Narloch
  * @see AnnotatedParameterProcessor
  */
-public class RequestParamParameterProcessor implements AnnotatedParameterProcessor {
+public class RequestHeaderParameterProcessor implements AnnotatedParameterProcessor {
 
-    private static final Class<RequestParam> ANNOTATION = RequestParam.class;
+    private static final Class<RequestHeader> ANNOTATION = RequestHeader.class;
 
     @Override
     public Class<? extends Annotation> getAnnotationType() {
@@ -29,12 +29,12 @@ public class RequestParamParameterProcessor implements AnnotatedParameterProcess
     public boolean processArgument(AnnotatedParameterContext context, Annotation annotation) {
         String name = ANNOTATION.cast(annotation).value();
         checkState(emptyToNull(name) != null,
-                "RequestParam.value() was empty on parameter %s", context.getParameterIndex());
+                "RequestHeader.value() was empty on parameter %s", context.getParameterIndex());
         context.setParameterName(name);
 
         MethodMetadata data = context.getMethodMetadata();
-        Collection<String> query = context.setTemplateParameter(name, data.template().queries().get(name));
-        data.template().query(name, query);
+        Collection<String> header = context.setTemplateParameter(name, data.template().headers().get(name));
+        data.template().header(name, header);
         return true;
     }
 }

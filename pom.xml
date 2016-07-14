@@ -19,6 +19,7 @@
 		<module>spring-feign-zookeeper</module>
 		<module>hello-service</module>
 		<module>name-service</module>
+		<module>spring-feign</module>
 	</modules>
 
 	<dependencyManagement>

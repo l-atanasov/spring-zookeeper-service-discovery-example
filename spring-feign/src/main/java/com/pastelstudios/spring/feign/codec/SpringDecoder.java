@@ -1,4 +1,4 @@
-package com.pastelstudios.spring.zookeeper.feign.codec;
+package com.pastelstudios.spring.feign.codec;
 
 import java.io.IOException;
 import java.io.InputStream;

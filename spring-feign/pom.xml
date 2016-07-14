@@ -6,19 +6,17 @@
 		<artifactId>spring-zookeeper-example-parent</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
-	<artifactId>spring-feign-zookeeper</artifactId>
+	<artifactId>spring-feign</artifactId>
 
 	<dependencies>
 		<dependency>
-			<groupId>com.pastelstudios.zookeeper</groupId>
-			<artifactId>spring-zookeeper</artifactId>
-			<version>${project.version}</version>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-webmvc</artifactId>
 		</dependency>
 		
 		<dependency>
-			<groupId>com.pastelstudios.zookeeper</groupId>
-			<artifactId>spring-feign</artifactId>
-			<version>${project.version}</version>
+			<groupId>com.netflix.feign</groupId>
+			<artifactId>feign-core</artifactId>
 		</dependency>
 	</dependencies>
 </project>

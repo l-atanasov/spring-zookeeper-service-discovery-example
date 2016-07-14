@@ -1,4 +1,4 @@
-package com.pastelstudios.spring.zookeeper.feign.contract;
+package com.pastelstudios.spring.feign.contract;
 
 import java.lang.annotation.Annotation;
 import java.util.Collection;

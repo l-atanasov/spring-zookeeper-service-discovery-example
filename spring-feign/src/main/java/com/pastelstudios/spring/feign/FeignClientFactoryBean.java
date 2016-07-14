@@ -1,19 +1,15 @@
-package com.pastelstudios.spring.zookeeper.feign;
+package com.pastelstudios.spring.feign;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.curator.x.discovery.ServiceInstance;
-import org.apache.curator.x.discovery.ServiceProvider;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.util.Assert;
 
-import com.pastelstudios.spring.zookeeper.discovery.ServiceMetadata;
-import com.pastelstudios.spring.zookeeper.discovery.ServiceProviderDelegate;
-import com.pastelstudios.spring.zookeeper.feign.codec.SpringDecoder;
-import com.pastelstudios.spring.zookeeper.feign.codec.SpringEncoder;
-import com.pastelstudios.spring.zookeeper.feign.contract.SpringMvcContract;
+import com.pastelstudios.spring.feign.codec.SpringDecoder;
+import com.pastelstudios.spring.feign.codec.SpringEncoder;
+import com.pastelstudios.spring.feign.contract.SpringMvcContract;
 
 import feign.Contract;
 import feign.Feign;
@@ -22,7 +18,6 @@ import feign.Logger;
 import feign.Request.Options;
 import feign.RequestInterceptor;
 import feign.Retryer;
-import feign.Target;
 import feign.codec.Decoder;
 import feign.codec.Encoder;
 import feign.codec.ErrorDecoder;
@@ -31,7 +26,6 @@ public class FeignClientFactoryBean implements FactoryBean<Object>, Initializing
 
 	private Object client = null;
 	private Class<?> type = null;
-	private ServiceProviderDelegate<ServiceMetadata> serviceProvider = null;
 	private Logger logger = null;
 	private Logger.Level logLevel = null;
 	private Encoder encoder = new SpringEncoder();
@@ -43,13 +37,10 @@ public class FeignClientFactoryBean implements FactoryBean<Object>, Initializing
 	private List<RequestInterceptor> requestInterceptors = new ArrayList<>();
 	private Retryer retryer = null;
 	private InvocationHandlerFactory invocationHandlerFactory = null;
+	private Targeter targeter = null;
 
 	public void setType(Class<?> type) {
 		this.type = type;
-	}
-
-	public void setServiceProvider(ServiceProviderDelegate<ServiceMetadata> serviceProvider) {
-		this.serviceProvider = serviceProvider;
 	}
 
 	public void setLogger(Logger logger) {
@@ -96,12 +87,14 @@ public class FeignClientFactoryBean implements FactoryBean<Object>, Initializing
 		this.invocationHandlerFactory = invocationHandlerFactory;
 	}
 
+	public void setTargeter(Targeter targeter) {
+		this.targeter = targeter;
+	}
+
 	@Override
 	public void afterPropertiesSet() throws Exception {
 		Assert.notNull(type);
-		Assert.notNull(serviceProvider);
 
-		Target<?> target = new ServiceProviderTarget<>(type, serviceProvider);
 		Feign.Builder builder = Feign.builder();
 
 		if (logger != null) {
@@ -138,7 +131,7 @@ public class FeignClientFactoryBean implements FactoryBean<Object>, Initializing
 			builder.invocationHandlerFactory(invocationHandlerFactory);
 		}
 
-		client = builder.target(target);
+		client = targeter.target(this, builder, type);
 	}
 
 	@Override
@@ -154,31 +147,6 @@ public class FeignClientFactoryBean implements FactoryBean<Object>, Initializing
 	@Override
 	public boolean isSingleton() {
 		return true;
-	}
-
-	private static class ServiceProviderTarget<T> extends Target.HardCodedTarget<T> {
-
-		private ServiceProvider<ServiceMetadata> serviceProvider;
-
-		public ServiceProviderTarget(Class<T> type, ServiceProviderDelegate<ServiceMetadata> serviceProvider) {
-			super(type, serviceProvider.getServiceName());
-			this.serviceProvider = serviceProvider;
-		}
-
-		@Override
-		public String url() {
-			String serviceName = super.url();
-			ServiceInstance<ServiceMetadata> serviceInstance = null;
-			try {
-				serviceInstance = serviceProvider.getInstance();
-			} catch (Exception e) {
-				throw new RuntimeException(e);
-			}
-			if (serviceInstance == null) {
-				throw new RuntimeException("There are no service instances for dependency " + serviceName);
-			}
-			return serviceInstance.buildUriSpec();
-		}
 	}
 
 }

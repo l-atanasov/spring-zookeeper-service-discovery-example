@@ -53,9 +53,13 @@
 		</property>
 	</bean>
 	
-	<bean id="nameServiceClient" class="com.pastelstudios.spring.zookeeper.feign.FeignClientFactoryBean">
+	<bean id="nameServiceClient" class="com.pastelstudios.spring.feign.FeignClientFactoryBean">
 		<property name="type" value="com.pastelstudios.example.helloservice.dependency.NameService" />
-		<property name="serviceProvider" ref="nameServiceProvider" />
+		<property name="targeter">
+			<bean class="com.pastelstudios.spring.feign.zookeeper.ServiceProviderTargeter">
+				<constructor-arg ref="nameServiceProvider" />
+			</bean>
+		</property>
 	</bean>
 	
 </beans>
